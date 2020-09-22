@@ -22,11 +22,24 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/promos', promoRouter);
 app.use('/leaders', leaderRouter);
+
+// mongoose server
+const mongoose = require('mongoose');
+const Dishes = require('./models/dishes');
+
+// establish connection to Mongo server
+const url = 'mongodb://localhost:27017/restaurant';
+const connect = mongoose.connect(url);
+
+connect.then((db) => {
+  console.log('Connected correctly to server');
+}, (err) => console.log(err));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
