@@ -1,6 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+// mongoose & mongo
+const Leader = require('../models/leaders');
+
 const leaderRouter = express.Router();
 
 leaderRouter.use(bodyParser.json());
@@ -13,22 +16,15 @@ leaderRouter.route('/')
 	next(); // will continue to look for functions that match '/dishes/ endpoint
 })
 .get((req, res, next) => {
-	// now res is modified
-	res.end('Will send all the leaders to you!');
+
 })
 .post((req, res, next) => {
-	// post requests carry some info in body
-	res.end('Will add info to leader: ' + req.body.name
-	+ " with details: " + req.body.description); // expect a "name" field in JSON 
 })
 .put((req, res, next) => {
 	res.statusCode = 403;
 	res.end('PUT operation not supported on /leader');
 })
 .delete((req, res, next) => {
-	// later we will restrict this dangerous operation to authorized users
-	res.statusCode = 403;
-	res.end('DELETE operation not supported on /leader');
 })
 
 leaderRouter.route('/:leaderId')
@@ -38,18 +34,18 @@ leaderRouter.route('/:leaderId')
 	next();
 })
 .get((req, res, next) => {
-	res.end(`Getting details for leader ${req.params.leaderId}`)
+	// GET result for a specified leader
 })
 .post((req, res, next) => {
-	res.end(`Updating leader ${req.params.leaderId}\nWith name: ${req.body.name}, description: ${req.body.description}`)
+	// POST operation not supported on specified promo
+	res.statusCode = 403;
+	res.end(`POST operation not supported on /dishes/${req.params.dishId}`);r
 })
 .put((req, res, next) => {
-	res.write(`Updating the leader ${req.params.leaderId}\n`)
-	res.end(`Will udpate the leader: ${req.body.name} with details: ${req.body.description}`)
+	// UPDATE specified leader
 })
 .delete((req, res, next) => {
-	res.statusCode = 403;
-	res.end(`Deleting leader ${req.params.leaderId}`);
+	// DELETE a specified leader
 })
 
 module.exports = leaderRouter;

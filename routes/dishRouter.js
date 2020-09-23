@@ -1,8 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
-// mongoose & model
-const mongoose = require('mongoose');
+// mongoose model function
 const Dishes = require('../models/dishes');
 
 // API restpoint handling for /dishes
