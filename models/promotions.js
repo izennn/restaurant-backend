@@ -14,7 +14,8 @@ const promoSchema = new mongoose.Schema({
 	},
 	label: {
 		type: String,
-		required: true
+		required: true,
+		default: ''
 	},
 	price: {
 		type: Currency,
