@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -19,47 +21,69 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+
+// use session
+app.use(session({
+  name: 'session-id',
+  secret:'12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
+
+// we provide a secret key to encrypt & sign the cookie sent from server to client
+// app.use(cookieParser('12345-67890-09876-54321')); 
+
+function notAuthenticatedErrResponse(res) {
+  var err = new Error('You are not authenticated');
+  res.setHeader('WWW-Authenticate', 'Basic');
+  err.status = 403;
+  return err;
+}
 
 function auth(req, res, next) {
-  // we will change request headers to include auth
+  // check if client req has properties signedCookies or signedCookies.user: 
+  console.log(req.session);
 
-  console.log(req.headers);
+  if (!req.session.user) {
+    var authHeader = req.headers.authorization;
+    // if client req does not contain auth header: 
+    if (!authHeader) 
+    {
+      next(notAuthenticatedErrResponse(res));
+      return;
+    }
+    // else we know auth header exists: 
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':'); 
+    var username = auth[0];
+    var password = auth[1];
 
-  var authHeader = req.headers.authorization;
-  if (!authHeader) // if client did not provide auth header
-  {
-    var err = new Error('You are not authenticated.')
+    // for the moment, use mock username & password
+    if (username === 'admin' && password === 'password') {
+      // include 'user' into the singed cookie with value 'admin'
+      // now all subsequent calls to client will include this cookie
 
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401; // unauthorized access
-    next(err);
-    return;
+      // res.cookie('user', 'admin', { signed: true }); 
+      req.session.user = 'admin';
+      next();
+    }
+    else {
+      // generate error, challenge client to send in correct authorization
+      next(notAuthenticatedErrResponse(res));
+    }    
   }
-  // else we know auth header exists: 
-  var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':'); 
-  // because auth header is "Basic QWxh..."
-  // then split again because username & password separated by ':'
-
-  var username = auth[0];
-  var password = auth[1];
-
-  // for the moment, use mock username & password
-  if (username === 'admin' && password === 'password') {
-    next();
-  }
-  else {
-    // generate error, challenge client to send in correct authorization
-    var err = new Error('You are not authenticated.');
-
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401;
-    next(err);
+  else { // if req contains signed cookie 'user'
+    if (req.session.user === 'admin') {
+      next();
+    }
+    else {
+      return next(notAuthenticatedErrResponse(res));
+    }
   }
 }
 
 // authentification middleware
-// clients should have to go through authentification middleware to use routes
+// this middleware is put before: express.static and routes
 app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -77,7 +101,14 @@ const Dishes = require('./models/dishes');
 
 // establish connection to Mongo server
 const url = 'mongodb://localhost:27017/restaurant';
-const connect = mongoose.connect(url);
+const connect = mongoose.connect(
+  url, 
+  {
+    useNewUrlParser: true, 
+    useUnifiedTopology: true,
+    useCreateIndex: true 
+  }
+);
 
 connect.then((db) => {
   console.log('Connected correctly to server');
