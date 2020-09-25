@@ -6,6 +6,7 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 /* express router middleware */
 var indexRouter = require('./routes/index');
@@ -24,20 +25,20 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// use session
-app.use(session({
-  name: 'session-id',
-  secret:'12345-67890-09876-54321',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore({
-    retries: 1
-  })
-}));
+// use session when using cookies/session
+// app.use(session({
+//   name: 'session-id',
+//   secret: config.secret,
+//   saveUninitialized: false,
+//   resave: false,
+//   store: new FileStore({
+//     retries: 1
+//   })
+// }));
 
 // passport middleware
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session()); needed when using sessions
 
 // un-authenticated users can still access homepage and login paths
 app.use('/', indexRouter);
@@ -54,26 +55,28 @@ function createErr(message, statusCode) {
   return err;
 }
 
-/* auth middleware to be ran before dish, leader, promotion routers */
-function auth(req, res, next) {
-  /* Before passport: 
-   * check if client req has session.user
-   * if so, check if session.user === 'authenticated' (value that we set)
-   * next()
-   */
+/* auth middleware to be ran before dish, leader, promotion routers 
+  * Before passport: 
+  * check if client req has session.user
+  * if so, check if session.user === 'authenticated' (value that we set)
+  * next()
 
-  /* With passport: 
-   * req.user is automatically filled in for us
-   * if req.user exists that means passport already authenticated for us
-   */
-  if (!req.user) {
-    return next(createErr('You are not authenticated', 403));
-  }  
-  else {
-    next();
+  * With passport: 
+  * req.user is automatically filled in for us
+  * if req.user exists that means passport already authenticated for us  
+
+  function auth(req, res, next) {
+    if (!req.user) {
+      return next(createErr('You are not authenticated', 403));      
+    } else {
+      next();      
+    }
   }
-}
-app.use(auth);
+  app.use(auth);
+
+  * But with JWT, we don't need to run this auth before every route,
+  * (we don't need to check if req.user exists)
+*/
 
 /* express static */
 app.use(express.static(path.join(__dirname, 'public')));
@@ -86,7 +89,7 @@ app.use('/leaders', leaderRouter);
 // mongoose server
 const mongoose = require('mongoose');
 // establish connection to Mongo server
-const url = 'mongodb://localhost:27017/restaurant';
+const url = config.mongoUrl;
 const connect = mongoose.connect(
   url, 
   {
