@@ -3,7 +3,10 @@ const bodyParser = require('body-parser');
 
 // mongoose model
 var User = require('../models/user');
+
+// authenticate methods
 var passport = require('passport');
+var authenticate = require('../authenticate');
 
 // router
 var router = express.Router();
@@ -14,19 +17,12 @@ router.get('/', function(req, res, next) {
   res.send('respond with a resource');
 });
 
-/* create and return new Error object w custom message & status */
-function createErr(message, status) {
-  var err = new Error(message);
-  err.status = status;
-  return err;
-}
-
 /* POST user sign up */
 router.post('/signup', (req, res, next) => {
   // Before passport, passport-local, passport-local-mongoose: 
   // User.findOne({}).then().catch()
 
-  // With passport-local, passport-local-mongoose:
+  // User.register comes from passport-local-mongoose plugin to User schema
   User.register(new User({username: req.body.username}), 
   req.body.password, (err, user) => {
     if (err) {
@@ -62,6 +58,8 @@ router.post('/login', passport.authenticate('local'), (req, res, next) => {
   */
 
   /* With passport: 
+   * Pass in passport.authenticate('local') method as middleware
+   * 
    * 1. we expect username/password to be included in the body of the post msg
    * and we expect the username/password to be in body, not authHeader
    *
@@ -70,25 +68,42 @@ router.post('/login', passport.authenticate('local'), (req, res, next) => {
    * authomatically send back a reply to the client about failture of auth
    * If no error, the next func (req, res, nect) => {} will be ran
   */
+
+  /* JWT
+   * Before, we were authenticate using local strategy (username/password), and issue session
+   * Now with JWT, once validated we will issue you a token instead of session
+   */
+
+  /* authenticate.getToken(user) uses jwt.sign method, which creates a token
+   * jwt.sign(payload, options)
+   * req.user contains _id, and is present because of passport.authenticate('local') middleware
+   */
+  var token = authenticate.getToken({_id: req.user._id}); // create token
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.json({
     success: true,
+    token: token, // pass token back to client
     status: "Login Successful",
   });
 });
 
-/* GET on logout, also no need to send further info (no need for next) */
+/* GET logout: on success, no need for 'next()' function */
 router.get('/logout', (req, res) => {
+  /*
   if (req.session) {
     req.session.destroy(); // destroy session
-    console.log("Destroyed sessions!");
     res.clearCookie('session-id'); // remove cookie w name 'session-id'
     res.redirect('/'); // redirect to homepage
   }
   else {
-    next(createErr('You are not logged in!', 403));
+    var err = new Error('You are not logged in');
+    err.status = 403;
+    next(err);
   }
+  */
+  req.logout();
+  res.redirect('/');
 })
 
 module.exports = router;
