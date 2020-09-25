@@ -1,6 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+// authenticate
+const authenticate = require('../authenticate');
+
 // mongoose model function
 const Dishes = require('../models/dishes');
 
@@ -22,7 +25,7 @@ dishRouter.route('/')
 	}, (err) => next(err))
 	.catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
 	// res.end('Will add info to dish: ' + req.body.name
 	// + " with details: " + req.body.description); // expect a "name" field in JSON 
 	Dishes.create(req.body)
@@ -34,12 +37,12 @@ dishRouter.route('/')
 	}, (err) => next(err))
 	.catch(err => next(err));
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
 	res.end('PUT operation not supported on /dishes');
 })
-.delete((req, res, next) => {
-	Dishes.remove({})
+.delete(authenticate.verifyUser, (req, res, next) => {
+	Dishes.deleteMany({})
 	.then((resp) => {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
@@ -58,11 +61,11 @@ dishRouter.route('/:dishId')
 	}, (err) => next(err))
 	.catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
 	res.end(`POST operation not supported on /dishes/${req.params.dishId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
 	Dishes.findByIdAndUpdate(req.params.dishId, {
 		$set: req.body 
 	}, { new: true }) // new: true returns object after udpate AFTEr update was applied (v.s. BEFORE)
@@ -74,7 +77,7 @@ dishRouter.route('/:dishId')
 	}, (err) => next(err))
 	.catch((err) => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
 	Dishes.findByIdAndRemove(req.params.dishId)
 	.then((resp) => {
 		res.statusCode = 200;
@@ -103,7 +106,7 @@ dishRouter.route('/:dishId/comments')
 	}, (err) => next(err))	
 	.catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
 	Dishes.findById(req.params.dishId)
 	.then((dish) => {
 		if (dish !== null) {
@@ -126,11 +129,11 @@ dishRouter.route('/:dishId/comments')
 	}, (err) => next(err))
 	.catch((err) => next(er));
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
 	res.end(`PUT operation not supported on /dishes/${req.params.dishId}/comments`);
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
 	const { params, body } = req;
 	Dishes.findById(params.dishId)
 	.then((dish) => {
@@ -180,11 +183,11 @@ dishRouter.route('/:dishId/comments/:commentId')
 	}, err => next(err))
 	.catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
 	res.end(`POST operation not supported on /dishes/${req.params.dishId}/comments/${req.params.commentId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
 	const { params, body } = req;
 	const { dishId, commentId } = params;
 
@@ -219,7 +222,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 	}, (err) => next(err))
 	.catch((err) => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
 	const { params } = req;
 	const { dishId, commentId } = params;
 
