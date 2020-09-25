@@ -4,6 +4,8 @@ var path = require('path');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 /* express router middleware */
 var indexRouter = require('./routes/index');
@@ -28,8 +30,14 @@ app.use(session({
   secret:'12345-67890-09876-54321',
   saveUninitialized: false,
   resave: false,
-  store: new FileStore()
+  store: new FileStore({
+    retries: 1
+  })
 }));
+
+// passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // un-authenticated users can still access homepage and login paths
 app.use('/', indexRouter);
@@ -48,20 +56,21 @@ function createErr(message, statusCode) {
 
 /* auth middleware to be ran before dish, leader, promotion routers */
 function auth(req, res, next) {
-  // check if client req has properties signedCookies or signedCookies.user: 
-  console.log(req.session);
+  /* Before passport: 
+   * check if client req has session.user
+   * if so, check if session.user === 'authenticated' (value that we set)
+   * next()
+   */
 
-  if (!req.session.user) {
-    return next(createErr('You are not authenticated!', 403));
-  }
-  else { 
-    // if req contains session information
-    if (req.session.user === 'authenticated') {
-      next();
-    }
-    else {
-      return next(createErr('You are not authenticated!', 403));
-    }
+  /* With passport: 
+   * req.user is automatically filled in for us
+   * if req.user exists that means passport already authenticated for us
+   */
+  if (!req.user) {
+    return next(createErr('You are not authenticated', 403));
+  }  
+  else {
+    next();
   }
 }
 app.use(auth);
