@@ -21,7 +21,7 @@ const commentSchema = new Schema({
 		ref: 'User',
 	}
 }, {
-	timestamp: true
+	timestamps: true
 });
 
 const dishSchema = new Schema(
