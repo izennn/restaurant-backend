@@ -16,7 +16,9 @@ dishRouter.use(bodyParser.json());
 dishRouter.route('/')
 .get((req, res, next) => {
 	// fetch all dishes using db.collection.find
+	// when dishes are constructed, populate author field w user
 	Dishes.find({})
+	.populate('comments.author')
 	.then((dishes) => {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
@@ -30,7 +32,6 @@ dishRouter.route('/')
 	// + " with details: " + req.body.description); // expect a "name" field in JSON 
 	Dishes.create(req.body)
 	.then((dish) => {
-		console.log("Created dish: ", dish);
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
 		res.json(dish);
@@ -54,6 +55,7 @@ dishRouter.route('/')
 dishRouter.route('/:dishId')
 .get((req, res, next) => {
 	Dishes.findById(req.params.dishId)
+	.populate('comments.author')
 	.then((dish) => {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
@@ -90,6 +92,7 @@ dishRouter.route('/:dishId')
 dishRouter.route('/:dishId/comments')
 .get((req, res, next) => {
 	Dishes.findById(req.params.dishId)
+	.populate('comments.author')
 	.then((dish) => {
 		// handle if dish with dishId not exist
 		if (dish !== null) {
@@ -110,14 +113,20 @@ dishRouter.route('/:dishId/comments')
 	Dishes.findById(req.params.dishId)
 	.then((dish) => {
 		if (dish !== null) {
-			// body of req has the comments, push it into dish.comments array
+			// insert author into req.body, get user from req.user
+			// user exists because we used authenticate.verifyUser, 
+			// the passport authorized JWT loads user info into req.body in form of req.user
+			req.body.author = req.user._id;
 			dish.comments.push(req.body);
 			dish.save()
 			.then((dish) => {
-				res.statusCode = 200;
-				res.setHeader('Content-Type', 'application/json');
-				// return updated dish
-				res.json(dish);
+				Dishes.findById(dish._id)
+				.populate('comments.author')
+				.then((dish) => {
+					res.statusCode = 200;
+					res.setHeader('Content-Type', 'application/json');
+					res.json(dish);
+				})
 			}, (err) => next(err));
 		}
 		else {
@@ -163,6 +172,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 .get((req, res, next) => {
 	const { params, body } = req;
 	Dishes.findById(params.dishId)
+	.populate('comments.author')
 	.then((dish) => {
 		if (dish !== null && dish.comments.id(params.commentId) !== null) {
 			console.log(`Found comment with ${params.commentId}`);
@@ -204,9 +214,14 @@ dishRouter.route('/:dishId/comments/:commentId')
 
 			dish.save()
 			.then((dish) => {
-				res.statusCode = 200;
-				res.setHeader('Content-Type', 'application/json');
-				res.json(dish);
+				// search for dish, populate comments author into dish
+				Dishes.findById(dish._id)
+				.populate('comments.author')
+				.then((dish) => {
+					res.statusCode = 200;
+					res.setHeader('Content-Type', 'application/json');
+					res.json(dish);
+				})
 			}, (err) => next(err));
 		}
 		else if (dish === null) {
@@ -233,9 +248,13 @@ dishRouter.route('/:dishId/comments/:commentId')
 			
 			dish.save()
 			.then((dish) => {
-				res.statusCode = 200;
-				res.setHeader('Content-Type', 'application/json');
-				res.json(dish);
+				Dishes.findById(dish._id)
+				.populate('comments.author')
+				.then((dish) => {
+					res.statusCode = 200;
+					res.setHeader('Content-Type', 'application/json');
+					res.json(dish);
+				})
 			}, (err) => next(err));
 		} else if (dish === null) {
 			err = new Error(`Could not find dish with ID: ${dishId}`);

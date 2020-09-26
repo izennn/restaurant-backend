@@ -3,13 +3,21 @@ var passportLocalMongoose = require('passport-local-mongoose');
 
 
 const User = new mongoose.Schema({
+	firstname: {
+		type: String,
+		default: ''
+	},
+	lasttname: {
+		type: String,
+		default: ''
+	},
 	admin: {
 		type: Boolean,
 		default: false
 	}
 });
 
-/* plugin automatically adds in username & 
+/* passport-local-mongoose plugin automatically adds in username & 
 hashed passowrd & additional methods */
 User.plugin(passportLocalMongoose)
 
