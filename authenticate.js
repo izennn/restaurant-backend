@@ -4,17 +4,16 @@ var User = require('./models/user');
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var jwt = require('jsonwebtoken');
+var config = require('./config');
 
 /* This file stores authentication stsrategies */
-
-var config = require('./config');
 
 // if not using local mongoose passport, replace 'User.authenticate' with custom authenticater
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-/*
+/* getToken using jwt.sign
  * Given user payload, return signed token
  * this method leverages jwt.sign(payload, secret key, options)
  * and returns the jwt
@@ -52,8 +51,8 @@ exports.jwtPassport = passport.use(new JwtStrategy(
 	}
 ));
 
-/*
- * verifyUser - Middleware to be ran on HTTP methods on routes
+/* verfiyUser using passport.authenticate
+ * Middleware to be ran on HTTP methods on routes
  * (e.g. dishRouter.route('/').post(authenticate.verifyUser, (req, res, next) => {}))
  *
  * uses passport.authenticate method which takes in parameters: strategy, options

@@ -2,6 +2,7 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
+const mongoose = require('mongoose');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
@@ -25,16 +26,17 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// use session when using cookies/session
-// app.use(session({
-//   name: 'session-id',
-//   secret: config.secret,
-//   saveUninitialized: false,
-//   resave: false,
-//   store: new FileStore({
-//     retries: 1
-//   })
-// }));
+/* use session as middleware when dealing with sessions
+  app.use(session({
+    name: 'session-id',
+    secret: config.secret,
+    saveUninitialized: false,
+    resave: false,
+    store: new FileStore({
+      retries: 1
+    })
+  }));
+*/
 
 // passport middleware
 app.use(passport.initialize());
@@ -86,8 +88,6 @@ app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
 
-// mongoose server
-const mongoose = require('mongoose');
 // establish connection to Mongo server
 const url = config.mongoUrl;
 const connect = mongoose.connect(

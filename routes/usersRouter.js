@@ -19,7 +19,7 @@ router.get('/', function(req, res, next) {
 
 /* POST user sign up */
 router.post('/signup', (req, res, next) => {
-  // Before passport, passport-local, passport-local-mongoose: 
+  // Before using passport: 
   // User.findOne({}).then().catch()
 
   // User.register comes from passport-local-mongoose plugin to User schema
@@ -30,7 +30,7 @@ router.post('/signup', (req, res, next) => {
       res.setHeader('Content-Type', 'application/json');
       res.json({
         err: err
-      })
+      });
     }
     else {
       // authenticate again with passport
@@ -72,12 +72,12 @@ router.post('/login', passport.authenticate('local'), (req, res, next) => {
   /* JWT
    * Before, we were authenticate using local strategy (username/password), and issue session
    * Now with JWT, once validated we will issue you a token instead of session
-   */
+  */
 
   /* authenticate.getToken(user) uses jwt.sign method, which creates a token
    * jwt.sign(payload, options)
    * req.user contains _id, and is present because of passport.authenticate('local') middleware
-   */
+  */
   var token = authenticate.getToken({_id: req.user._id}); // create token
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
@@ -104,6 +104,6 @@ router.get('/logout', (req, res) => {
   */
   req.logout();
   res.redirect('/');
-})
+});
 
 module.exports = router;
