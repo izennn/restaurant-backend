@@ -96,6 +96,7 @@ router.post('/login', passport.authenticate('local'), (req, res, next) => {
    * jwt.sign(payload, options)
    * req.user contains _id, and is present because of passport.authenticate('local') middleware
   */
+  
   var token = authenticate.getToken({_id: req.user._id}); // create token
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
