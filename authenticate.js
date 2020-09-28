@@ -26,13 +26,12 @@ exports.getToken = function(user) {
 	)
 };
 
-/* Create opts object to be passed to JwtStrategy method later */
+// JwtStrategy(options, verify)
 var opts = {};
-// ExtractJwt methods such as 'fromAuthHeader', 'fromBodyField', 'fromExtractors', 'fromHeader'
+// extract jwt from header Authentication: 'bearer xxx'
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = config.secretKey;
 
-// JwtStrategy(options, verify)
 exports.jwtPassport = passport.use(new JwtStrategy(
 	opts,
 	(jwt_payload, done) => {
@@ -61,3 +60,14 @@ exports.verifyUser = passport.authenticate(
 	'jwt', 
 	{ session: false }
 );
+
+exports.verifyAdmin = function(req, res, next) {
+	if (!req.user.admin) {
+		var err = new Error("You are not authorized to perform this action!");
+		err.status = 401;
+		return next(err);
+	}
+	else {
+		next();
+	}
+};
