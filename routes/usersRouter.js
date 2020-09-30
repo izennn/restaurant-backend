@@ -1,6 +1,8 @@
 var express = require('express');
 const bodyParser = require('body-parser');
 
+const cors = require('./cors');
+
 // mongoose model
 var User = require('../models/user');
 
@@ -13,7 +15,7 @@ var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find({}).exec()
   .then((users) => {
     res.statusCode = 200;
@@ -24,7 +26,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
 });
 
 /* POST user sign up */
-router.post('/signup', (req, res, next) => {
+router.post('/signup', cors.corsWithOptions, (req, res, next) => {
   // Before using passport: 
   // User.findOne({}).then().catch()
 
@@ -66,7 +68,7 @@ router.post('/signup', (req, res, next) => {
 });
 
 /* POST operation for user login; body contains auth header */
-router.post('/login', passport.authenticate('local'), (req, res, next) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res, next) => {
   /* Before passport: 
    * check req.session.user ?
    * check authHeader?
@@ -108,7 +110,7 @@ router.post('/login', passport.authenticate('local'), (req, res, next) => {
 });
 
 /* GET logout: on success, no need for 'next()' function */
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
   /*
   if (req.session) {
     req.session.destroy(); // destroy session
