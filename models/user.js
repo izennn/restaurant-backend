@@ -11,6 +11,7 @@ const User = new mongoose.Schema({
 		type: String,
 		default: ''
 	},
+	facebookId: String, // stores facebook ID of user that has passed in access token
 	admin: {
 		type: Boolean,
 		default: false
