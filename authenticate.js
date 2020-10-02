@@ -76,7 +76,7 @@ exports.verifyAdmin = function(req, res, next) {
 
 exports.facebookPassport = passport.use(new FacebookTokenStrategy(
 	{
-		clientId: config.facebook.clientId,
+		clientID: config.facebook.clientId,
 		clientSecret: config.facebook.clientSecret,
 	}, (accessToken, refreshToken, profile, done) => {
 		User.findOne({facebookId: profile.id}, (err, user) => {
