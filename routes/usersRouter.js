@@ -127,4 +127,20 @@ router.get('/logout', cors.corsWithOptions, (req, res, next) => {
   res.redirect('/');
 });
 
+// Facebook login
+router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
+  // if passport auth successful, there will be user in req
+  if (req.user) {
+    let token = authenticate.getToken({_id: req.user._id});
+    // once we get JWT we don't need FB token anymore
+    res.status = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({
+      success: true,
+      token: token,
+      status: 'You are succesfully logged in!'
+    });
+  }
+});
+
 module.exports = router;
