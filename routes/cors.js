@@ -9,7 +9,8 @@ const app = express();
 // all the origins the server is willing to accept
 const whitelist = [
 	'http://localhost:3000', 
-	'http://localhost:3443'
+	'http://localhost:3443',
+	'http://Izens-MacBook-Pro:3001' // frontend yan build
 ]
 
 let corsOptionsDelegate = (req, callback) => {
