@@ -12,19 +12,19 @@ const Favorites = require('../models/favorite');
 
 // create Favorites Express router
 const favoriteRouter = express.Router();
-favoriteRouter.use(bodyParser);
+favoriteRouter.use(bodyParser.json());
 
 favoriteRouter.route('/')
-.options(cors.withOptions, (req, res) => { res.sendStatus(200); })
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
 	const current_userId = req.user._id;
 	// find favorites list associated with current user ID
 	// once found, populate w user & dishes info
-	Favorites.find({author: ObjectId(current_userId)}).exec()
+	Favorites.findOne({author: current_userId})
 	.populate('author')
 	.populate('dishes')
 	.then((favoritesList) => {
-		if (favoritesList == null) {
+		if (favoritesList === null) {
 			let err = new Error(`Favorites list for user with user ID ${current_userId} could not be found.`);
 			err.status = 404;
 			return next(err);	
@@ -41,26 +41,27 @@ favoriteRouter.route('/')
 })
 .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 	const current_userId = req.user._id;
-	Favorites.find({author: ObjectId(current_userId)}).exec()
-	.find((favoritesList) => {
+	Favorites.findOne({'author': current_userId})
+	.then((favoritesList) => {
 		const newDishes = req.body;
 		if (!favoritesList) {
 			// create new favoritesList for user if nothing found
 			Favorites.create({
-				author: current_userId;
-				dishes: newDishes;
+				author: current_userId,
+				dishes: newDishes
 			})
 			.then((favoritesList) => {
 				res.statusCode = 200;
 				res.setHeader('Content-Type', 'application/json');
 				res.json(favoritesList);
+				console.log(`${favoritesList}\n`);
 			}, (err) => next(err))
 			.catch((err) => next(err));
 		} else {
 			let touched = false;
-			for (dish in newDishes) {
-				if (favoritesList.dishes.indexOf(dish) === -1) {
-					favoritesList.dishes.push(dish)
+			for (let i=0; i<newDishes.length; i++) {
+				if (favoritesList.dishes.indexOf(newDishes[i]._id) === -1) {
+					favoritesList.dishes.push(newDishes[i]);
 					touched = true;
 				}
 			}
@@ -77,6 +78,9 @@ favoriteRouter.route('/')
 					}, (err) => next(err));
 				}, (err) => next(err))
 				.catch((err) => next(err));
+			} else {
+				res.statusCode = 200;
+				res.end("There were no dishes to be updated.");
 			}
 		}
 	}, (err) => next(er))
@@ -85,14 +89,14 @@ favoriteRouter.route('/')
 .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 	// DELETE favorites list associated with current user
 	const current_userId = req.user._id;
-	Favorites.find({author: OjbectId(current_userId)}).exec()
+	Favorites.findOne({author: current_userId})
 	.then((favoritesList) => {
 		if (!favoritesList) {
 			let err = new Error(`Favorites list for user with user ID ${current_userId} could not be found.`);
 			err.status = 404;
 			return next(err);	
 		} else {
-			db.collection.findOneAndDelete({author: current_userId}).exec()
+			Favorites.findOneAndDelete({author: current_userId})
 			.then((favoritesList) => {
 				res.statusCode = 200;
 				res.setHeader('Content-Type', 'application/json');
@@ -105,7 +109,7 @@ favoriteRouter.route('/')
 });
 
 favoriteRouter.route('/:dishId')
-.option((res, req) => {res.sendStatus(200);})
+.options(cors.corsWithOptions, (res, req) => {res.sendStatus(200);})
 .get(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
 	res.end('GET operation not supported on /favorites/:dishId');
@@ -117,7 +121,7 @@ favoriteRouter.route('/:dishId')
 .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 	// firstly check if :dishId valid?
 	// if valid check if dishId already in favorites list
-	Favorites.find({author: ObjectId(req.user._id)}).exec()
+	Favorites.findOne({author: req.user._id})
 	.then((favoritesList) => {
 		if (!favoritesList) {
 			let err = new Error(`Favorites list for user with user ID ${current_userId} could not be found.`);
@@ -144,13 +148,14 @@ favoriteRouter.route('/:dishId')
 	.catch((err) => next(err));
 })
 .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
-	Favorites.find({author: ObjectId(req.user._id)}).exec()
+	Favorites.findOne({author: req.user._id})
 	.then((favoritesList) => {
 		if (!favoritesList) {
 			let err = new Error(`Favorites list for user with user ID ${current_userId} could not be found.`);
 			err.status = 404;
 			return next(err);	
 		} else {
+			console.log(`Favorites list returned from /favorites/:dishId: ${favoritesList}`);
 			const dishId = req.params.dishId;
 			const dishIdIndex = favoritesList.dishes.indexOf(dishId);
 
@@ -163,8 +168,8 @@ favoriteRouter.route('/:dishId')
 					res.json(list);
 				}, (err) => next(err));
 			} else {
-				res.setStatus = 200;
-				res.end(`Dish with ID ${dishId} is already in favorites list!`);
+				res.setStatus = 404;
+				res.end(`Dish with ID ${dishId} is not in favorites list!`);
 			}			
 		}
 	}, (err) => next(err))
