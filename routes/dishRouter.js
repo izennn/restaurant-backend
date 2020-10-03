@@ -21,7 +21,7 @@ dishRouter.route('/')
 .get(cors.cors, (req, res, next) => {
 	// fetch all dishes using db.collection.find
 	// when dishes are constructed, populate author field w user
-	Dishes.find({})
+	Dishes.find(req.query)
 	.populate('comments.author')
 	.then((dishes) => {
 		res.statusCode = 200;
