@@ -111,8 +111,31 @@ favoriteRouter.route('/')
 favoriteRouter.route('/:dishId')
 .options(cors.corsWithOptions, (res, req) => {res.sendStatus(200);})
 .get(authenticate.verifyUser, (req, res, next) => {
-	res.statusCode = 403;
-	res.end('GET operation not supported on /favorites/:dishId');
+	// use GET to ensure that specific dish with dishId is already favorite for user
+	Favorites.findOne({author: req.user._id})
+	.then((favorites) => {
+		if (!favorites) {
+			// if no favorites, then obv dish doesn't exist
+			res.statusCode = 200;
+			res.setHeader('Content-Type', 'application/json');
+			return res.json({"exists": false, favorites: favorites});
+		}
+		else {
+			if (favorites.dishes.indexOf(req.params.dishId) === -1) {
+				res.statusCode = 200;
+				res.setHeader('Content-Type', 'application/json');
+				return res.json({"exists": false, favorites: favorites});
+			}
+			else {
+				// dish exists
+				res.statusCode = 200;
+				res.setHeader('Content-Type', 'application/json');
+				return res.json({"exists": true, favorites: favorites});
+
+			}
+		}
+	}, (err) => next(err))
+	.catch((err) => next(err));
 })
 .put(authenticate.verifyUser, (req, res, next) => {
 	res.statusCode = 403;
@@ -135,9 +158,14 @@ favoriteRouter.route('/:dishId')
 				favoritesList.dishes.push(dishId);
 				favoritesList.save()
 				.then((list) => {
-					res.setStatus = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(list);
+					Favorites.findById(req.params.dishId)
+					.populate('author')
+					.populate('dishes')
+					.then((favoritesList) => {
+						res.setStatus = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(favoritesList);
+					})
 				}, (err) => next(err));
 			} else {
 				res.status = 200;
@@ -162,9 +190,12 @@ favoriteRouter.route('/:dishId')
 				favoritesList.dishes.splice(dishIdIndex, 1);
 				favoritesList.save()
 				.then((list) => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(list);
+					Favorites.findById(req.params.dishId)
+					.then((list) => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(list);
+					})
 				}, (err) => next(err));
 			} else {
 				res.setStatus = 404;
