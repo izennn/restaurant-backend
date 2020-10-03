@@ -15,6 +15,7 @@ var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
+router.options('*', cors.corsWithOptions, (req, res) => { res.sendStatus(200); }) // for any endpoint if recieve options, 
 router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find({}).exec()
   .then((users) => {
@@ -129,7 +130,7 @@ router.get('/logout', cors.corsWithOptions, (req, res, next) => {
 
 // Facebook login
 router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
-  // if passport auth successful, there will be user in req
+  // if passport auth successful, there will be user in req, as done by passport's done()
   if (req.user) {
     let token = authenticate.getToken({_id: req.user._id});
     // once we get JWT we don't need FB token anymore
