@@ -155,7 +155,6 @@ favoriteRouter.route('/:dishId')
 			err.status = 404;
 			return next(err);	
 		} else {
-			console.log(`Favorites list returned from /favorites/:dishId: ${favoritesList}`);
 			const dishId = req.params.dishId;
 			const dishIdIndex = favoritesList.dishes.indexOf(dishId);
 
