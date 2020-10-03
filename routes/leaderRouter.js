@@ -23,7 +23,7 @@ leaderRouter.route('/')
 	next(); // will continue to look for functions that match '/dishes/ endpoint
 })
 .get(cors.cors, (req, res, next) => {
-	Leader.find({})
+	Leader.find(req.query)
 	.then((leaders) => {
 		res.json(leaders);
 	}, (err) => next(err))
