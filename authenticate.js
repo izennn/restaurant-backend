@@ -58,7 +58,7 @@ exports.jwtPassport = passport.use(new JwtStrategy(
  * 
  * When authenticate.verifyUser is ran as middleware on route,
  * it is the same as:
- * route.get('/some_route, passport.authenticate('jwt', {session: false}), (req, res, next) => {})
+ * route.get('/some_route', passport.authenticate('jwt', {session: false}), (req, res, next) => {})
  */
 exports.verifyUser = passport.authenticate(
 	'jwt', 
