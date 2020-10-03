@@ -55,8 +55,10 @@ exports.jwtPassport = passport.use(new JwtStrategy(
 /* verfiyUser using passport.authenticate
  * Middleware to be ran on HTTP methods on routes
  * (e.g. dishRouter.route('/').post(authenticate.verifyUser, (req, res, next) => {}))
- *
- * uses passport.authenticate method which takes in parameters: strategy, options
+ * 
+ * When authenticate.verifyUser is ran as middleware on route,
+ * it is the same as:
+ * route.get('/some_route, passport.authenticate('jwt', {session: false}), (req, res, next) => {})
  */
 exports.verifyUser = passport.authenticate(
 	'jwt', 
@@ -74,11 +76,13 @@ exports.verifyAdmin = function(req, res, next) {
 	}
 };
 
+// this strategy is called when we run passport.authenticate('facebook-token') as middleware
 exports.facebookPassport = passport.use(new FacebookTokenStrategy(
 	{
 		clientID: config.facebook.clientId,
 		clientSecret: config.facebook.clientSecret,
-	}, (accessToken, refreshToken, profile, done) => {
+	}, 
+	(accessToken, refreshToken, profile, done) => {
 		User.findOne({facebookId: profile.id}, (err, user) => {
 			if (err) {
 				// on error!
