@@ -19,7 +19,7 @@ const User = new mongoose.Schema({
 });
 
 /* passport-local-mongoose plugin automatically adds in username & 
-hashed passowrd & additional methods */
+hashed passowrd, along with additional methods */
 User.plugin(passportLocalMongoose)
 
 module.exports = mongoose.model('User', User);
