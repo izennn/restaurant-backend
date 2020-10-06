@@ -69,45 +69,48 @@ router.post('/signup', cors.corsWithOptions, (req, res, next) => {
 });
 
 /* POST operation for user login; body contains auth header */
-router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res, next) => {
-  /* Before passport: 
-   * check req.session.user ?
-   * check authHeader?
-   * User.findOne.then().catch()
-   * if returned user's username & password match, 
-   * return req.session.user = 'authenticated'
-  */
-
-  /* With passport: 
-   * Pass in passport.authenticate('local') method as middleware
-   * 
-   * 1. we expect username/password to be included in the body of the post msg
-   * and we expect the username/password to be in body, not authHeader
-   *
-   * 2. Call passport.authenticate as middleware
-   * If any error when running passport.authenticate, passport authenticate local will
-   * authomatically send back a reply to the client about failture of auth
-   * If no error, the next func (req, res, nect) => {} will be ran
-  */
-
-  /* JWT
-   * Before, we were authenticate using local strategy (username/password), and issue session
-   * Now with JWT, once validated we will issue you a token instead of session
-  */
-
+router.post('/login', cors.corsWithOptions, (req, res, next) => {
   /* authenticate.getToken(user) uses jwt.sign method, which creates a token
    * jwt.sign(payload, options)
    * req.user contains _id, and is present because of passport.authenticate('local') middleware
   */
-  
-  var token = authenticate.getToken({_id: req.user._id}); // create token
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.json({
-    success: true,
-    token: token, // pass token back to client
-    status: "Login Successful",
-  });
+
+  // move authenticate to down here to help distinguish between auth err or user login error  
+  passport.authenticate('local', (err, user, info) => {
+    if (err) 
+      return next(err);
+    if (!user) {
+      // user not found? or password incorrect
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({
+        success: false,
+        status: 'Login Unsuccessful!',
+        err: info
+      });
+    } 
+    // if no error && user not null, pass in logIn func
+    req.logIn(user, (err) => {
+      if (err) {
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({
+          success: false,
+          status: 'Login Unsuccessful!',
+          err: 'Could not login user!'
+        });
+      }
+      
+      var token = authenticate.getToken({_id: req.user._id}); // create token
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({
+        success: true,
+        token: token, // pass token back to client
+        status: "Login Successful",
+      });
+    }) 
+  })(req, res, next); // why do we need to append these?
 });
 
 /* GET logout: on success, no need for 'next()' function */
@@ -143,5 +146,33 @@ router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res
     });
   }
 });
+
+// handle if JWT expired
+router.get('/checkJWTToken', cors.corsWithOptions, (req, res, next) => {
+  passport.authenticate('jwt', (session: false), (err, user, info) => {
+    if (err) {
+      return next(err); // let express err handle 
+    }
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({
+        status: 'JWT Invalid',
+        success: false,
+        err: info
+      })
+    }
+    else {
+      // valid user
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({
+        status: 'JWT Valid',
+        success: true,
+        user: user
+      })
+    }
+  }) (req, res);
+})
 
 module.exports = router;
